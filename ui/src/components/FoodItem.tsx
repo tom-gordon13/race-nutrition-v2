@@ -23,7 +23,7 @@ const StyledBox = styled(Box, {
     isSelected: boolean;
     color: string;
 }>(({ theme, isSelected, color }) => ({
-    width: '110px',
+    width: 'auto',
     height: '60px',
     backgroundColor: color,
     cursor: 'grab',

@@ -110,7 +110,7 @@ const FoodItemContainer: React.FC<FoodItemContainerProps> = ({ setIsItemSelected
         >
             <Grid container spacing={2}>
                 {colors.map((color, index) => (
-                    <Grid key={index}>
+                    <Grid key={index} size={{ xs: 4 }}>
                         <FoodItem
                             color={color}
                             setIsItemSelected={setIsItemSelected}
