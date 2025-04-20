@@ -16,7 +16,7 @@ const FoodItemsWrapper = styled(Box)({
 });
 
 const FoodItemContainer: React.FC = () => {
-    const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1'];
+    const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#45B7D1'];
     const [activeDragItem, setActiveDragItem] = useState<string | null>(null);
 
     const handleDragStart = (e: React.DragEvent<HTMLDivElement>, color: string) => {

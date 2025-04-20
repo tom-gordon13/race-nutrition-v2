@@ -1,5 +1,5 @@
-import React from 'react';
-import { Box, styled } from '@mui/material';
+import React, { useState } from 'react';
+import { Box, styled, keyframes } from '@mui/material';
 
 interface FoodItemProps {
     color: string;
@@ -7,24 +7,52 @@ interface FoodItemProps {
     onTouchStart: (e: React.TouchEvent<HTMLDivElement>) => void;
 }
 
-const StyledBox = styled(Box)(({ color }: { color: string }) => ({
-    width: '55px',
-    height: '55px',
+
+const wiggle = keyframes`
+  0% { transform: rotate(0deg); }
+  25% { transform: rotate(5deg); }
+  50% { transform: rotate(-5deg); }
+  75% { transform: rotate(5deg); }
+  100% { transform: rotate(0deg); }
+`;
+
+const StyledBox = styled(Box, {
+    shouldForwardProp: (prop) => prop !== 'isSelected' && prop !== 'color',
+})<{
+    isSelected: boolean;
+    color: string;
+}>(({ theme, isSelected, color }) => ({
+    width: '60px',
+    height: '60px',
     backgroundColor: color,
     cursor: 'grab',
     touchAction: 'none',
+    transition: 'transform 0.2s',
     '&:active': {
         cursor: 'grabbing',
     },
+    animation: isSelected
+        ? `${wiggle} 0.5s ease-in-out infinite`
+        : 'none',
 }));
 
+
 const FoodItem: React.FC<FoodItemProps> = ({ color, onDragStart, onTouchStart }) => {
+    const [isSelected, setIsSelected] = useState(false)
+
+    const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+        setIsSelected(!isSelected);
+        onTouchStart(e);
+    }
+
+
     return (
         <StyledBox
             color={color}
+            isSelected={isSelected}
             draggable
             onDragStart={onDragStart}
-            onTouchStart={onTouchStart}
+            onTouchStart={handleTouchStart}
         />
     );
 };
