@@ -22,6 +22,7 @@ interface FoodItemContainerProps {
 const FoodItemContainer: React.FC<FoodItemContainerProps> = ({ setIsItemSelected }) => {
     const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#45B7D1', '#45B7D1', '#45B7D1'];
     const [activeDragItem, setActiveDragItem] = useState<string | null>(null);
+    const [selectedColor, setSelectedColor] = useState<string | null>(null);
 
     const handleDragStart = (e: React.DragEvent<HTMLDivElement>, color: string) => {
         e.dataTransfer.setData('color', color);
@@ -36,8 +37,12 @@ const FoodItemContainer: React.FC<FoodItemContainerProps> = ({ setIsItemSelected
         setTimeout(() => document.body.removeChild(dragImage), 0);
     };
 
-    const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>, color: string) => {
+    const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>, color: string, isSelected: boolean) => {
         setActiveDragItem(color);
+
+        // Store the selection state globally
+        (window as any).isItemSelected = isSelected;
+        (window as any).selectedItemColor = isSelected ? color : null;
 
         // Create a visual indicator for the dragged item
         const touch = e.touches[0];
@@ -53,8 +58,9 @@ const FoodItemContainer: React.FC<FoodItemContainerProps> = ({ setIsItemSelected
         dragImage.style.pointerEvents = 'none';
         document.body.appendChild(dragImage);
 
-        // Store the drag image element for later removal
+        // Store the drag image element and color for later reference
         (window as any).currentDragImage = dragImage;
+        (window as any).currentDragColor = color;
     };
 
     const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
@@ -66,11 +72,22 @@ const FoodItemContainer: React.FC<FoodItemContainerProps> = ({ setIsItemSelected
     };
 
     const handleTouchEnd = () => {
-        setActiveDragItem(null);
-        if ((window as any).currentDragImage) {
-            document.body.removeChild((window as any).currentDragImage);
-            (window as any).currentDragImage = null;
-        }
+        // Use short delay to allow RaceContainer to check position and color
+        setTimeout(() => {
+            setActiveDragItem(null);
+            if ((window as any).currentDragImage) {
+                document.body.removeChild((window as any).currentDragImage);
+                (window as any).currentDragImage = null;
+            }
+        }, 50);
+    };
+
+    // Handle food item selection change
+    const handleSelectionChange = (color: string, isSelected: boolean) => {
+        setSelectedColor(isSelected ? color : null);
+        // Make selection info available globally
+        (window as any).selectedItemColor = isSelected ? color : null;
+        (window as any).isItemSelected = isSelected;
     };
 
     // Add global touch event listeners
@@ -84,11 +101,15 @@ const FoodItemContainer: React.FC<FoodItemContainerProps> = ({ setIsItemSelected
         };
 
         const handleGlobalTouchEnd = () => {
-            setActiveDragItem(null);
-            if ((window as any).currentDragImage) {
-                document.body.removeChild((window as any).currentDragImage);
-                (window as any).currentDragImage = null;
-            }
+            // Use short delay to allow RaceContainer to check position and color
+            setTimeout(() => {
+                setActiveDragItem(null);
+                if ((window as any).currentDragImage) {
+                    document.body.removeChild((window as any).currentDragImage);
+                    (window as any).currentDragImage = null;
+                    // Keep currentDragColor for RaceContainer to use
+                }
+            }, 50);
         };
 
         document.addEventListener('touchmove', handleGlobalTouchMove);
@@ -115,7 +136,8 @@ const FoodItemContainer: React.FC<FoodItemContainerProps> = ({ setIsItemSelected
                             color={color}
                             setIsItemSelected={setIsItemSelected}
                             onDragStart={(e) => handleDragStart(e, color)}
-                            onTouchStart={(e) => handleTouchStart(e, color)}
+                            onTouchStart={(e, itemColor, isSelected) => handleTouchStart(e, itemColor, isSelected)}
+                            onSelectionChange={handleSelectionChange}
                         />
                     </Grid>
                 ))}
