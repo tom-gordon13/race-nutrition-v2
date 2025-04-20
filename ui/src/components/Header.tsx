@@ -2,7 +2,7 @@ import React from 'react';
 import { AppBar, Toolbar, Typography, styled } from '@mui/material';
 
 const StyledAppBar = styled(AppBar)({
-    height: '10vh',
+    height: '8vh',
     backgroundColor: '#ffffff',
     color: '#000000',
     boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',

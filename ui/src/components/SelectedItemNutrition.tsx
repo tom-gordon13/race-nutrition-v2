@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Container, styled, Box, Accordion, AccordionSummary, Typography, AccordionDetails } from '@mui/material';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+
 const StyledContainer = styled(Container)(({ theme }) => ({
     height: '10vh',
     backgroundColor: '#f5f5f5',
@@ -12,28 +14,21 @@ const StyledContainer = styled(Container)(({ theme }) => ({
     overflow: 'hidden',
 }));
 
-const DroppedItemBox = styled(Box)(({ color }: { color: string }) => ({
-    width: '50px',
-    height: '50px',
-    backgroundColor: color,
-    position: 'absolute',
-    cursor: 'default',
-}));
-
 interface SelectedItemNutritionProps {
     expanded: boolean
+    isItemSelected: boolean
     onChange: () => void
 }
 
-const SelectedItemNutrition: React.FC<SelectedItemNutritionProps> = ({ expanded, onChange }) => {
+const SelectedItemNutrition: React.FC<SelectedItemNutritionProps> = ({ expanded, isItemSelected, onChange }) => {
 
 
     return (
         <Accordion expanded={expanded} onChange={onChange}>
             <AccordionSummary
-            // expandIcon={<ExpandMoreIcon />}
+                expandIcon={isItemSelected ? <ExpandMoreIcon /> : null}
             >
-                <Typography>Test</Typography>
+                <Typography>{isItemSelected ? 'Item selected' : 'Select an item above'}</Typography>
             </AccordionSummary>
             <AccordionDetails>
                 <StyledContainer>blah blah blah</StyledContainer>

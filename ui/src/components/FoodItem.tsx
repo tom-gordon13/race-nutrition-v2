@@ -3,6 +3,7 @@ import { Box, styled, keyframes } from '@mui/material';
 
 interface FoodItemProps {
     color: string;
+    setIsItemSelected: React.Dispatch<React.SetStateAction<boolean>>;
     onDragStart: (e: React.DragEvent<HTMLDivElement>) => void;
     onTouchStart: (e: React.TouchEvent<HTMLDivElement>) => void;
 }
@@ -22,7 +23,7 @@ const StyledBox = styled(Box, {
     isSelected: boolean;
     color: string;
 }>(({ theme, isSelected, color }) => ({
-    width: '60px',
+    width: '110px',
     height: '60px',
     backgroundColor: color,
     cursor: 'grab',
@@ -37,11 +38,12 @@ const StyledBox = styled(Box, {
 }));
 
 
-const FoodItem: React.FC<FoodItemProps> = ({ color, onDragStart, onTouchStart }) => {
+const FoodItem: React.FC<FoodItemProps> = ({ color, onDragStart, onTouchStart, setIsItemSelected }) => {
     const [isSelected, setIsSelected] = useState(false)
 
     const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
         setIsSelected(!isSelected);
+        setIsItemSelected((prev) => !prev)
         onTouchStart(e);
     }
 

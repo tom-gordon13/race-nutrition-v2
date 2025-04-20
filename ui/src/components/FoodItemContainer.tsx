@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Container, styled, Box } from '@mui/material';
+import { Container, styled, Box, Grid } from '@mui/material';
 import FoodItem from './FoodItem';
 
 const StyledContainer = styled(Container)({
@@ -15,8 +15,12 @@ const FoodItemsWrapper = styled(Box)({
     padding: '16px',
 });
 
-const FoodItemContainer: React.FC = () => {
-    const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#45B7D1'];
+interface FoodItemContainerProps {
+    setIsItemSelected: React.Dispatch<React.SetStateAction<boolean>>;
+}
+
+const FoodItemContainer: React.FC<FoodItemContainerProps> = ({ setIsItemSelected }) => {
+    const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#45B7D1', '#45B7D1', '#45B7D1'];
     const [activeDragItem, setActiveDragItem] = useState<string | null>(null);
 
     const handleDragStart = (e: React.DragEvent<HTMLDivElement>, color: string) => {
@@ -104,16 +108,18 @@ const FoodItemContainer: React.FC = () => {
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
         >
-            <FoodItemsWrapper>
+            <Grid container spacing={2}>
                 {colors.map((color, index) => (
-                    <FoodItem
-                        key={index}
-                        color={color}
-                        onDragStart={(e) => handleDragStart(e, color)}
-                        onTouchStart={(e) => handleTouchStart(e, color)}
-                    />
+                    <Grid key={index}>
+                        <FoodItem
+                            color={color}
+                            setIsItemSelected={setIsItemSelected}
+                            onDragStart={(e) => handleDragStart(e, color)}
+                            onTouchStart={(e) => handleTouchStart(e, color)}
+                        />
+                    </Grid>
                 ))}
-            </FoodItemsWrapper>
+            </Grid>
         </StyledContainer>
     );
 };
