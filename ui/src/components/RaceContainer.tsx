@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Container, styled, Box } from '@mui/material';
 
 interface DroppedItem {
@@ -31,7 +31,7 @@ const DroppedItemBox = styled(Box)(({ color }: { color: string }) => ({
 const RaceContainer: React.FC = () => {
     const [droppedItems, setDroppedItems] = useState<DroppedItem[]>([]);
     const [nextId, setNextId] = useState(0);
-    const [isDragging, setIsDragging] = useState(false);
+    const containerRef = useRef<HTMLDivElement>(null);
 
     const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
         e.preventDefault();
@@ -44,34 +44,74 @@ const RaceContainer: React.FC = () => {
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
 
-        setDroppedItems(prev => [...prev, {
-            id: nextId,
-            color,
-            x,
-            y,
-        }]);
-        setNextId(prev => prev + 1);
+        // Check if we have a selected item color
+        const selectedColor = (window as any).selectedItemColor;
+
+        // Only add if the dragged color matches the selected color
+        if (selectedColor && selectedColor === color) {
+            setDroppedItems(prev => [...prev, {
+                id: nextId,
+                color,
+                x,
+                y,
+            }]);
+            setNextId(prev => prev + 1);
+        }
+    };
+
+    // Handle direct touch on container (for mobile placement without drag)
+    const handleTouchEnd = (e: React.TouchEvent<HTMLDivElement>) => {
+        // Only process if an item is selected
+        if ((window as any).isItemSelected && (window as any).selectedItemColor) {
+            const color = (window as any).selectedItemColor;
+            const rect = containerRef.current?.getBoundingClientRect();
+
+            if (rect) {
+                const touch = e.changedTouches[0];
+                const x = touch.clientX - rect.left;
+                const y = touch.clientY - rect.top;
+
+                setDroppedItems(prev => [...prev, {
+                    id: nextId,
+                    color,
+                    x,
+                    y,
+                }]);
+                setNextId(prev => prev + 1);
+            }
+        }
     };
 
     // Handle touch events for mobile
     useEffect(() => {
-        const handleTouchMove = (e: TouchEvent) => {
-            if ((window as any).currentDragImage) {
-                setIsDragging(true);
-            }
-        };
+        const handleGlobalTouchEnd = (e: TouchEvent) => {
+            // Get color from the global variable (set by FoodItemContainer)
+            if ((window as any).currentDragImage || (window as any).currentDragColor) {
+                const color = (window as any).currentDragColor ||
+                    ((window as any).currentDragImage ?
+                        (window as any).currentDragImage.style.backgroundColor : null);
 
-        const handleTouchEnd = (e: TouchEvent) => {
-            if (isDragging && (window as any).currentDragImage) {
-                const color = (window as any).currentDragImage.style.backgroundColor;
-                const rect = document.querySelector('.MuiContainer-root')?.getBoundingClientRect();
+                // Only process if the item is selected
+                if ((window as any).isItemSelected &&
+                    (window as any).selectedItemColor === color &&
+                    color && containerRef.current) {
 
-                if (rect) {
-                    const x = e.changedTouches[0].clientX - rect.left;
-                    const y = e.changedTouches[0].clientY - rect.top;
+                    const rect = containerRef.current.getBoundingClientRect();
+                    const touch = e.changedTouches[0];
 
-                    // Check if the drop is within the RaceContainer
-                    if (x >= 0 && x <= rect.width && y >= 0 && y <= rect.height) {
+                    // Check if the touch ended within the RaceContainer bounds
+                    if (
+                        touch.clientX >= rect.left &&
+                        touch.clientX <= rect.right &&
+                        touch.clientY >= rect.top &&
+                        touch.clientY <= rect.bottom
+                    ) {
+                        const x = touch.clientX - rect.left;
+                        const y = touch.clientY - rect.top;
+
+                        console.log('Dropping selected item', color, 'at', x, y);
+
+                        // Add the dropped item
                         setDroppedItems(prev => [...prev, {
                             id: nextId,
                             color,
@@ -82,26 +122,23 @@ const RaceContainer: React.FC = () => {
                     }
                 }
             }
-
-            setIsDragging(false);
         };
 
-        document.addEventListener('touchmove', handleTouchMove);
-        document.addEventListener('touchend', handleTouchEnd);
-        document.addEventListener('touchcancel', handleTouchEnd);
+        document.addEventListener('touchend', handleGlobalTouchEnd);
 
         return () => {
-            document.removeEventListener('touchmove', handleTouchMove);
-            document.removeEventListener('touchend', handleTouchEnd);
-            document.removeEventListener('touchcancel', handleTouchEnd);
+            document.removeEventListener('touchend', handleGlobalTouchEnd);
         };
-    }, [isDragging, nextId]);
+    }, [nextId]);
 
     return (
         <StyledContainer
+            ref={containerRef}
             maxWidth="lg"
             onDragOver={handleDragOver}
             onDrop={handleDrop}
+            onTouchEnd={handleTouchEnd}
+            id="race-container"
         >
             {droppedItems.map(item => (
                 <DroppedItemBox
