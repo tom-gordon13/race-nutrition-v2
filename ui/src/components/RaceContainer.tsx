@@ -17,7 +17,7 @@ const StyledContainer = styled(Container)(({ theme }) => ({
     marginTop: theme.spacing(2),
     marginBottom: theme.spacing(2),
     position: 'relative',
-    overflow: 'hidden',
+    overflow: 'auto',
 }));
 
 const DroppedItemBox = styled(Box)(({ color }: { color: string }) => ({
@@ -32,6 +32,8 @@ const RaceContainer: React.FC = () => {
     const [droppedItems, setDroppedItems] = useState<DroppedItem[]>([]);
     const [nextId, setNextId] = useState(0);
     const containerRef = useRef<HTMLDivElement>(null);
+    const touchStartRef = useRef<{ x: number, y: number, time: number } | null>(null);
+    const isScrollingRef = useRef(false);
 
     const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
         e.preventDefault();
@@ -59,27 +61,64 @@ const RaceContainer: React.FC = () => {
         }
     };
 
+    const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+        const touch = e.touches[0];
+        touchStartRef.current = {
+            x: touch.clientX,
+            y: touch.clientY,
+            time: Date.now()
+        };
+        isScrollingRef.current = false;
+    };
+
+    const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+        if (!touchStartRef.current) return;
+
+        const touch = e.touches[0];
+        const deltaY = Math.abs(touch.clientY - touchStartRef.current.y);
+
+        // If the user has moved more than 10px vertically, consider it scrolling
+        if (deltaY > 10) {
+            isScrollingRef.current = true;
+        }
+    };
+
     // Handle direct touch on container (for mobile placement without drag)
     const handleTouchEnd = (e: React.TouchEvent<HTMLDivElement>) => {
-        // Only process if an item is selected
-        if ((window as any).isItemSelected && (window as any).selectedItemColor) {
-            const color = (window as any).selectedItemColor;
-            const rect = containerRef.current?.getBoundingClientRect();
+        // Only process if an item is selected AND we're not scrolling
+        if (!isScrollingRef.current &&
+            touchStartRef.current &&
+            (window as any).isItemSelected &&
+            (window as any).selectedItemColor) {
 
-            if (rect) {
-                const touch = e.changedTouches[0];
-                const x = touch.clientX - rect.left;
-                const y = touch.clientY - rect.top;
+            // Calculate the duration of the touch
+            const touchDuration = Date.now() - touchStartRef.current.time;
 
-                setDroppedItems(prev => [...prev, {
-                    id: nextId,
-                    color,
-                    x,
-                    y,
-                }]);
-                setNextId(prev => prev + 1);
+            // Only consider it a tap if touch duration was short (less than 300ms)
+            // and if the touch didn't move significantly
+            if (touchDuration < 300) {
+                const color = (window as any).selectedItemColor;
+                const rect = containerRef.current?.getBoundingClientRect();
+
+                if (rect) {
+                    const touch = e.changedTouches[0];
+                    const x = touch.clientX - rect.left;
+                    const y = touch.clientY - rect.top;
+
+                    setDroppedItems(prev => [...prev, {
+                        id: nextId,
+                        color,
+                        x,
+                        y,
+                    }]);
+                    setNextId(prev => prev + 1);
+                }
             }
         }
+
+        // Reset the touch tracking refs
+        touchStartRef.current = null;
+        isScrollingRef.current = false;
     };
 
     // Handle touch events for mobile
@@ -109,19 +148,25 @@ const RaceContainer: React.FC = () => {
                         const x = touch.clientX - rect.left;
                         const y = touch.clientY - rect.top;
 
-                        console.log('Dropping selected item', color, 'at', x, y);
+                        // Only add if we're not scrolling
+                        if (!isScrollingRef.current) {
+                            console.log('Dropping selected item', color, 'at', x, y);
 
-                        // Add the dropped item
-                        setDroppedItems(prev => [...prev, {
-                            id: nextId,
-                            color,
-                            x,
-                            y,
-                        }]);
-                        setNextId(prev => prev + 1);
+                            // Add the dropped item
+                            setDroppedItems(prev => [...prev, {
+                                id: nextId,
+                                color,
+                                x,
+                                y,
+                            }]);
+                            setNextId(prev => prev + 1);
+                        }
                     }
                 }
             }
+
+            // Reset the scrolling flag after touch ends
+            isScrollingRef.current = false;
         };
 
         document.addEventListener('touchend', handleGlobalTouchEnd);
@@ -137,6 +182,8 @@ const RaceContainer: React.FC = () => {
             maxWidth="lg"
             onDragOver={handleDragOver}
             onDrop={handleDrop}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
             id="race-container"
         >
